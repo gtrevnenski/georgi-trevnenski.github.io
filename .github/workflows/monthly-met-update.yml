@@ -34,7 +34,8 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add static/analysis_stats.json public/analysis_stats.json
+          git add static/analysis_stats.json
+          git add -f public/analysis_stats.json
           git commit -m "chore: update Met dataset metrics (scheduled)" || echo "No changes to commit"
 
       - name: Push changes
