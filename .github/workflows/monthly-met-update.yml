@@ -25,6 +25,11 @@ jobs:
           LAST_RETRAIN_DATE: "2025-10-19"
         run: python art_predictor_proj/update_recent_updates.py
 
+      - name: Sync public copy (if site serves from prebuilt assets)
+        run: |
+          mkdir -p public
+          cp static/analysis_stats.json public/analysis_stats.json
+
       - name: Commit changes
         run: |
           git config user.name "github-actions[bot]"
