@@ -97,10 +97,11 @@
 </div>
 
 <div
-  class="fixed inset-0 min-h-screen bg-black bg-opacity-75 transition-opacity duration-300 lg:hidden z-50"
+  class="fixed inset-0 min-h-screen bg-black bg-opacity-75 transition-opacity duration-300 lg:hidden"
+  style="z-index: 9999;"
   :class="mobileMenu ? 'opacity-100' : 'opacity-0 pointer-events-none'"
   @click.self="mobileMenu = false">
-  <div class="absolute right-0 min-h-screen bg-gray-200 py-5 px-10 w-2/3 sm:w-1/3 z-50">
+  <div class="absolute right-0 min-h-screen bg-gray-200 py-5 px-10 w-2/3 sm:w-1/3">
     <button class="absolute top-0 right-0 mt-9 mr-4" @click="mobileMenu = false">
       <i class="bx bx-x text-4xl"></i>
     </button>
