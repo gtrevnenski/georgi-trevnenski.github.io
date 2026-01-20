@@ -2,7 +2,7 @@ name: Update Met dataset metrics (monthly)
 
 on:
   schedule:
-    - cron: "0 3 1 * *"  # 03:00 UTC on the 1st of each month
+    - cron: "0 3 1 */6 *"
   workflow_dispatch: {}
 
 jobs:
@@ -22,14 +22,20 @@ jobs:
 
       - name: Update counts since last retrain
         env:
-          LAST_RETRAIN_DATE: "2025-10-19"
+          LAST_RETRAIN_DATE: "2026-01-10"
         run: python art_predictor_proj/update_recent_updates.py
+
+      - name: Sync public copy (if site serves from prebuilt assets)
+        run: |
+          mkdir -p public
+          cp static/analysis_stats.json public/analysis_stats.json
 
       - name: Commit changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add static/analysis_stats.json public/analysis_stats.json
+          git add static/analysis_stats.json
+          git add -f public/analysis_stats.json
           git commit -m "chore: update Met dataset metrics (scheduled)" || echo "No changes to commit"
 
       - name: Push changes

@@ -3,16 +3,41 @@ title: "MET Art Display Predictor"
 nav_label: "ML Art Curator"
 date: 2025-12-28
 draft: false
-description: "ML-powered prediction of artwork exhibition likelihood - using data from the Metropolitan Museum of Art"
+description: "Personal project modeling artwork exhibition likelihood - using data from the Metropolitan Museum of Art"
 tags: ["Gradient Boosting", "MLOps", "Data Analysis"]
 github: "https://github.com/gtrevnenski/art-display-predictor"
 ---
 
-Analysis of public data from the Metropolitan Museum of Art and a gradient boosting algorithm predicting which art piece is on view  
+<div class="met-section">
+<div class="met-objective">
+<div class="met-objective-title">Objective</div>
+<div class="met-objective-text">
+While visiting art galleries, I've always wondered what makes a piece of art valuable. Here I present a full analysis of the Metropolitan Museum of Art Open Access dataset and a Gradient Boosting model that scores artworks and learns patterns behind which pieces are selected for display. This is a data-driven perspective on the inherently subjective nature of art.
+</div>
+</div>
 
-This project uses data made available by The Metropolitan Museum of Art under the Open Access program.  
+<div class="met-subtitle">Key Responsibilities & Actions</div>
 
-MET Open Access Dataset: https://github.com/metmuseum/openaccess  
+<ul class="met-list">
+<li>Built an end-to-end pipeline: ingest MET Open Access data, clean it, and create a combined text field plus curated metadata features.</li>
+<li>Performed exploratory data analysis to understand label imbalance, department/category patterns, and to select/shape features used for modeling.</li>
+<li>Generated text embeddings with a pre-trained SentenceTransformer (all-MiniLM-L6-v2) and trained a CatBoost classifier that mixes embeddings with categorical and numeric inputs (using CatBoost's native categorical handling and class balancing).</li>
+<li>Ran hyperparameter optimization.</li>
+<li>Validated the model with evaluation and error analysis, and measured input influence via permutation tests and text ablations (dropping specific text fields and re-embedding).</li>
+<li>Deployed the trained model as a containerized FastAPI service on Google Cloud Run. It returns the probability and label. <strong>You can test it yourself below!</strong> Keep in mind the first request with take a minute to start the service.</li>
+<li>Ensured continuous updates on the Dataset analysis dashboard as an indication of the relevance of the model and need of retraining.</li>
+</ul>
+
+<div class="met-results-section">
+<div class="met-results-title">Key Results</div>
+
+<ul class="met-results-list">
+<li>Model performance is strong (see the dashboard), with results supported by error analysis and column-impact tests.</li>
+<li><strong>Department</strong> was the strongest non-text driver; shuffling it dropped PR-AUC by ~0.34 on a 1k test sample.</li>
+<li>The <strong>text embeddings</strong> contributed most of the predictive signal overall, with dates and categories adding smaller but meaningful gains.</li>
+</ul>
+</div>
+</div>
 
 {{< dashboard >}}
 <h2 style="display: none;">Dataset Analysis</h2>
@@ -55,8 +80,11 @@ MET Open Access Dataset: https://github.com/metmuseum/openaccess
 </div>
 </div>
 <div class="updated-since-retrain">
-<div class="updated-value" id="updatedSinceRetrain">Loading...</div>
-<div class="updated-label" id="updatedSinceRetrainPct">Updated since last retrain</div>
+<div class="updated-value">
+<span id="updatedSinceRetrain">Loading...</span>
+<span class="updated-percent" id="updatedSinceRetrainPercent">--%</span>
+</div>
+<div class="updated-label" id="updatedSinceRetrainLabel">New and updated pieces since last retrain</div>
 </div>
 <div class="update-info" id="analysisUpdateInfo">Last updated: Loading...</div>
 </div>
@@ -82,53 +110,56 @@ MET Open Access Dataset: https://github.com/metmuseum/openaccess
 
 <div class="form-row">
 <div class="form-group">
-<label for="departmentInput">Department *</label>
+<label for="departmentInput">Department</label>
 <div class="custom-select">
-<input type="text" id="departmentInput" name="department" placeholder="Search departments..." autocomplete="off" required>
+<input type="text" id="departmentInput" name="department" placeholder="Search departments..." autocomplete="off">
 <div class="dropdown-list" id="departmentList"></div>
 </div>
 </div>
 
 <div class="form-group">
-<label for="classificationInput">Classification *</label>
+<label for="countryInput">Country</label>
 <div class="custom-select">
-<input type="text" id="classificationInput" name="classification" placeholder="Search classifications..." autocomplete="off" required>
-<div class="dropdown-list" id="classificationList"></div>
+<input type="text" id="countryInput" name="country" placeholder="Search countries..." autocomplete="off">
+<div class="dropdown-list" id="countryList"></div>
 </div>
 </div>
 </div>
 
 <div class="form-row">
 <div class="form-group">
-<label for="cultureInput">Culture *</label>
+<label for="cat1Input">Category 1</label>
 <div class="custom-select">
-<input type="text" id="cultureInput" name="culture" placeholder="Search cultures..." autocomplete="off" required>
-<div class="dropdown-list" id="cultureList"></div>
+<input type="text" id="cat1Input" name="cat1" placeholder="Search primary categories..." autocomplete="off">
+<div class="dropdown-list" id="cat1List"></div>
 </div>
 </div>
 
 <div class="form-group">
-<label for="mediumInput">Medium *</label>
+<label for="subcat1Input">Subcategory</label>
 <div class="custom-select">
-<input type="text" id="mediumInput" name="medium" placeholder="Search mediums..." autocomplete="off" required>
-<div class="dropdown-list" id="mediumList"></div>
+<input type="text" id="subcat1Input" name="subcat1" placeholder="Search subcategories..." autocomplete="off">
+<div class="dropdown-list" id="subcat1List"></div>
 </div>
 </div>
 </div>
 
 <div class="form-row">
 <div class="form-group">
-<label for="beginDateInput">Object Begin Date *</label>
-<input type="number" id="beginDateInput" name="objectBeginDate" placeholder="e.g., 1850" required>
-<small>Range: -400000 to 5000</small>
+<label for="cat2Input">Category 2</label>
+<div class="custom-select">
+<input type="text" id="cat2Input" name="cat2" placeholder="Search secondary categories..." autocomplete="off">
+<div class="dropdown-list" id="cat2List"></div>
+</div>
 </div>
 
 <div class="form-group">
-<label for="endDateInput">Object End Date *</label>
-<input type="number" id="endDateInput" name="objectEndDate" placeholder="e.g., 1860" required>
-<small>Range: -240000 to 2870</small>
+<label for="endDateInput">Object End Date</label>
+<input type="number" id="endDateInput" name="objectEndDate" placeholder="e.g., 1860 (Add '-' for BC)">
 </div>
 </div>
+
+<p class="form-hint form-hint-center">Fields without * are optional—leave blank if unknown.</p>
 
 <button type="submit" class="submit-btn">Predict Display Likelihood</button>
 </form>
@@ -137,6 +168,122 @@ MET Open Access Dataset: https://github.com/metmuseum/openaccess
 </div>
 
 <style>
+  .met-section {
+    margin: 2rem 0;
+  }
+
+  .met-objective {
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    border-left: 4px solid #3b82f6;
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+  }
+
+  .met-objective-title {
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: #1e40af;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .met-objective-title::before {
+    content: "🎯";
+    font-size: 1.3rem;
+  }
+
+  .met-objective-text {
+    color: #1e3a8a;
+    line-height: 1.7;
+  }
+
+  .met-subtitle {
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: #1f2937;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #e5e7eb;
+  }
+
+  .met-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .met-list li {
+    position: relative;
+    padding-left: 2rem;
+    margin-bottom: 1.25rem;
+    line-height: 1.7;
+    color: #374151;
+  }
+
+  .met-list li::before {
+    content: "▸";
+    position: absolute;
+    left: 0.5rem;
+    color: #3b82f6;
+    font-weight: 700;
+    font-size: 1.2rem;
+  }
+
+  .met-results-section {
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    border-left: 4px solid #10b981;
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+  }
+
+  .met-results-title {
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: #065f46;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .met-results-title::before {
+    content: "✅";
+    font-size: 1.3rem;
+  }
+
+  .met-results-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .met-results-list li {
+    position: relative;
+    padding-left: 2rem;
+    margin-bottom: 1rem;
+    line-height: 1.7;
+    color: #064e3b;
+  }
+
+  .met-results-list li::before {
+    content: "✓";
+    position: absolute;
+    left: 0.5rem;
+    color: #10b981;
+    font-weight: 700;
+    font-size: 1.3rem;
+  }
+
+  .met-results-list li strong {
+    color: #047857;
+    font-weight: 600;
+  }
+
   .data-analysis {
     background: #ffffff;
     border: 2px solid #e5e7eb;
@@ -261,13 +408,22 @@ MET Open Access Dataset: https://github.com/metmuseum/openaccess
 }
 
 .updated-value {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.updated-percent {
   font-size: 1.4rem;
   font-weight: 700;
   color: #1f2937;
 }
 
 .updated-label {
-  font-size: 0.9rem;
+  font-size: 1rem;
   color: #6b7280;
   margin-top: 0.35rem;
 }
@@ -398,6 +554,17 @@ MET Open Access Dataset: https://github.com/metmuseum/openaccess
     opacity: 0.6;
     cursor: not-allowed;
     transform: none;
+  }
+
+  .form-hint {
+    margin-top: 0;
+    margin-bottom: 0.95rem;
+    font-size: 0.85rem;
+    color: #6b7280;
+  }
+
+  .form-hint-center {
+    text-align: center;
   }
   
   .prediction-result {
@@ -550,6 +717,7 @@ MET Open Access Dataset: https://github.com/metmuseum/openaccess
     const basePath = idx >= 0 ? path.slice(0, idx + 1) : path;
     return `${url.origin}${basePath || '/'}`;
   })();
+  const API_BASE = 'https://met-art-display-predictor-lrl5veikwq-ew.a.run.app';
   const ANALYSIS_URL = new URL("analysis_stats.json", SITE_BASE).toString();
   const METRICS_URL = new URL("model_metadata.json", SITE_BASE).toString();
   const FEATURES_URL = new URL("feature_ranges.json", SITE_BASE).toString();
@@ -577,10 +745,13 @@ MET Open Access Dataset: https://github.com/metmuseum/openaccess
       // Updated since last retrain
       const updatedCount = data.updated_since_retrain?.count ?? 0;
       const updatedPct = data.updated_since_retrain?.percentage ?? 0;
-      const retrainDate = data.updated_since_retrain?.last_retrain_date || '2025-10-19';
+      const retrainDateRaw = data.updated_since_retrain?.last_retrain_date || '2025-10-19';
+      const retrainDate = new Date(retrainDateRaw);
       document.getElementById('updatedSinceRetrain').textContent = updatedCount.toLocaleString();
-      document.getElementById('updatedSinceRetrainPct').textContent =
-        `${updatedPct.toFixed(2)}% since retrain (${retrainDate})`;
+      document.getElementById('updatedSinceRetrainPercent').textContent =
+        `(${updatedPct.toFixed(2)}%)`;
+      document.getElementById('updatedSinceRetrainLabel').textContent =
+        `New and updated pieces since last retrain (${retrainDate.toLocaleDateString()})`;
       
       const analysisUpdated = new Date(data.last_updated || '2025-10-19');
       document.getElementById('analysisUpdateInfo').textContent =
@@ -643,9 +814,10 @@ MET Open Access Dataset: https://github.com/metmuseum/openaccess
   
   function setupDropdowns() {
     createDropdown('departmentInput', 'departmentList', featureRanges.department);
-    createDropdown('classificationInput', 'classificationList', featureRanges.classification);
-    createDropdown('cultureInput', 'cultureList', featureRanges.culture);
-    createDropdown('mediumInput', 'mediumList', featureRanges.medium);
+    createDropdown('countryInput', 'countryList', featureRanges.country);
+    createDropdown('cat1Input', 'cat1List', featureRanges.cat1);
+    createDropdown('subcat1Input', 'subcat1List', featureRanges.subcat1);
+    createDropdown('cat2Input', 'cat2List', featureRanges.cat2);
   }
   
   function createDropdown(inputId, listId, options) {
@@ -712,38 +884,27 @@ MET Open Access Dataset: https://github.com/metmuseum/openaccess
     submitBtn.disabled = true;
     submitBtn.textContent = 'Predicting...';
     
-    const formData = {
+    const endDateRaw = document.getElementById('endDateInput').value;
+    const country = document.getElementById('countryInput').value.trim();
+    const payload = {
       text: document.getElementById('textInput').value,
-      department: document.getElementById('departmentInput').value,
-      classification: document.getElementById('classificationInput').value,
-      culture: document.getElementById('cultureInput').value,
-      medium: document.getElementById('mediumInput').value,
-      objectBeginDate: parseInt(document.getElementById('beginDateInput').value),
-      objectEndDate: parseInt(document.getElementById('endDateInput').value)
+      department: valueOrNull(document.getElementById('departmentInput').value),
+      country: valueOrNull(country),
+      has_country: country ? true : false,
+      cat1: valueOrNull(document.getElementById('cat1Input').value),
+      subcat1: valueOrNull(document.getElementById('subcat1Input').value),
+      cat2: valueOrNull(document.getElementById('cat2Input').value),
+      objectEndDate: valueOrNull(parseInt(endDateRaw, 10))
     };
     
-    // Validate dates
-    if (formData.objectBeginDate < -400000 || formData.objectBeginDate > 5000) {
-      alert('Object Begin Date must be between -400000 and 5000');
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Predict Display Likelihood';
-      return;
-    }
-    
-    if (formData.objectEndDate < -240000 || formData.objectEndDate > 2870) {
-      alert('Object End Date must be between -240000 and 2870');
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Predict Display Likelihood';
-      return;
-    }
-    
     try {
-      const response = await fetch('http://localhost:8000/predict', {
+      console.log('Sending payload to API:', payload);
+      const response = await fetch(`${API_BASE}/predict`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       });
       
       if (response.ok) {
@@ -754,12 +915,20 @@ MET Open Access Dataset: https://github.com/metmuseum/openaccess
         displayResult({ error: error || 'Failed to get prediction' }, false);
       }
     } catch (error) {
+      console.error('Prediction request failed:', error);
       displayResult({ error: 'Failed to connect to API. Make sure the server is running on localhost:8000.' }, false);
     } finally {
       submitBtn.disabled = false;
       submitBtn.textContent = 'Predict Display Likelihood';
     }
   });
+
+  function valueOrNull(val) {
+    if (val === undefined || val === null) return null;
+    if (typeof val === 'number' && Number.isNaN(val)) return null;
+    if (typeof val === 'string' && val.trim() === '') return null;
+    return val;
+  }
   
   function displayResult(result, success) {
     const resultDiv = document.getElementById('predictionResult');
@@ -767,21 +936,31 @@ MET Open Access Dataset: https://github.com/metmuseum/openaccess
     resultDiv.className = 'prediction-result ' + (success ? 'success' : 'error');
     
     if (success) {
+      const prediction = (result.prediction || '').replace('_', '-');
+      const probabilityValue = Number.isFinite(result.probability) ? result.probability : null;
+      const thresholdValue = Number.isFinite(result.threshold) ? result.threshold : 0.682;
+      const thresholdPct = thresholdValue === null ? null : (thresholdValue * 100).toFixed(2);
+      const probabilityPct = probabilityValue === null ? 'N/A' : (probabilityValue * 100).toFixed(2);
       resultDiv.innerHTML = `
         <div class="result-title">Prediction Result</div>
         <div class="result-item">
           <span class="result-label">Prediction:</span>
-          <span class="result-value">${result.prediction === 'on_view' ? '✓ Likely On Display' : '✗ Likely In Storage'}</span>
+          <span class="result-value">${prediction === 'on-view' ? '✓ Likely To Be On Display' : '✗ Unlikely To Be On Display'}</span>
         </div>
         <div class="result-item">
-          <span class="result-label">Probability:</span>
-          <span class="result-value">${(result.probability * 100).toFixed(2)}%</span>
+          <span class="result-label">Confidence score:</span>
+          <span class="result-value">${probabilityPct}%</span>
         </div>
+        ${thresholdPct === null ? '' : `
+        <div class="result-item">
+          <span class="result-label">Decision threshold:</span>
+          <span class="result-value">${thresholdPct}%</span>
+        </div>
+        `}
         <div class="result-item">
           <span class="result-label">Confidence:</span>
           <span class="result-value">${result.confidence}</span>
         </div>
-        ${result.explanation ? `<div class="result-explanation">${result.explanation}</div>` : ''}
       `;
     } else {
       resultDiv.innerHTML = `

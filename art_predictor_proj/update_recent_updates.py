@@ -5,7 +5,7 @@ Uses the Met Museum Collection API:
 GET /public/collection/v1/objects?metadataDate=YYYY-MM-DD
 
 Env vars:
-  LAST_RETRAIN_DATE (required): ISO date (e.g., 2025-10-19)
+  LAST_RETRAIN_DATE (required): ISO date (e.g., 2026-01-10 or 2026-01-10T00:00:00Z)
   MET_API_BASE (optional): override API base for testing/mocking
   OUTPUT_PATHS (optional): comma-separated paths to analysis_stats.json files
 """
@@ -16,9 +16,13 @@ import json
 import os
 import sys
 from pathlib import Path
+from datetime import datetime, timezone
 from typing import Iterable
 
 import requests
+
+DEFAULT_LAST_RETRAIN_DATE = "2026-01-10"
+
 
 
 def get_env(name: str, default: str | None = None) -> str:
@@ -43,6 +47,16 @@ def fetch_updated_count(api_base: str, metadata_date: str) -> int:
 def update_analysis_files(
     paths: Iterable[Path], updated_count: int, last_retrain_date: str
 ) -> None:
+    # Convert date string to ISO 8601 format with time and timezone
+    # Handle both "YYYY-MM-DD" and "YYYY-MM-DDTHH:MM:SSZ" formats
+    if "T" not in last_retrain_date:
+        # Plain date format, convert to ISO 8601 with midnight UTC
+        dt = datetime.fromisoformat(last_retrain_date).replace(tzinfo=timezone.utc)
+        last_retrain_date_iso = dt.isoformat()
+    else:
+        # Already in ISO 8601 format
+        last_retrain_date_iso = last_retrain_date
+    
     for path in paths:
         if not path.exists():
             print(f"Skipping missing file: {path}")
@@ -56,8 +70,11 @@ def update_analysis_files(
         data["updated_since_retrain"] = {
             "count": updated_count,
             "percentage": percentage,
-            "last_retrain_date": last_retrain_date,
+            "last_retrain_date": last_retrain_date_iso,
         }
+
+        # Reflect when the dataset snapshot was refreshed (not model retrain date)
+        data["last_updated"] = datetime.now(timezone.utc).isoformat()
 
         with path.open("w", encoding="utf-8") as f:
             json.dump(data, f, indent=2)
@@ -66,7 +83,7 @@ def update_analysis_files(
 
 
 def main() -> int:
-    last_retrain_date = get_env("LAST_RETRAIN_DATE")
+    last_retrain_date = get_env("LAST_RETRAIN_DATE", DEFAULT_LAST_RETRAIN_DATE)
     api_base = os.getenv("MET_API_BASE", "https://collectionapi.metmuseum.org")
 
     output_paths_env = os.getenv("OUTPUT_PATHS")

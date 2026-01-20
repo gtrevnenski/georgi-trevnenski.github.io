@@ -14,8 +14,14 @@ logoLink = "/"
   link        = "/projects"
   target      = "_self"
 
+[[menu]]
+  text        = "Contact"
+  description = "Get in touch"
+  link        = "/contact"
+  target      = "_self"
+
 [button]
   enabled = true
   text    = "Get my CV"
-  link    = "files/cv.pdf"
+  link    = "/files/cv.pdf"
   target  = "_blank"
